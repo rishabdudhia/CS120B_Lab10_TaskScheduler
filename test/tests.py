@@ -34,5 +34,5 @@ tests = [ {'description': 'This test will run first.',
 # Optionally you can add a set of "watch" variables these need to be global or static and may need
 # to be scoped at the function level (for static variables) if there are naming conflicts. The 
 # variables listed here will display everytime you hit (and stop at) a breakpoint
-watch = ['lstate', 'outB']
+watch = ['kstate', 'lstate', 'bstate']
 
