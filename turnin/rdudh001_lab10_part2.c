@@ -6,7 +6,8 @@
  *	Locking mechanism: led B0: on = unlocked, off = locked; button B7: press = lock
  *	I acknowledge all content contained herein, excluding template or example
  *	code, is my own original work.
- *
+ *	
+ *	Youtube link: https://www.youtube.com/watch?v=RE33sBm-4oo
  */
 
 #include <avr/io.h>
