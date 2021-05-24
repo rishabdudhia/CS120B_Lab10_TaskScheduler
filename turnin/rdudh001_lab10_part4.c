@@ -8,6 +8,7 @@
  *	I acknowledge all content contained herein, excluding template or example
  *	code, is my own original work.
  *
+ *	Youtube link: https://www.youtube.com/watch?v=wGW0XkKZIpc
  */
 
 #include <avr/io.h>
