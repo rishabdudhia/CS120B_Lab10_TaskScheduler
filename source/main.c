@@ -3,7 +3,8 @@
  *	Lab Section: 022
  *	Assignment: Lab #10  Exercise #4
  *	Exercise Description: [optional - include for your own benefit]
- *	Locking mechanism: led B0: on = unlocked, off = locked; button B7: press = lock; button A7: doorbell tone played on speaker
+ *	Locking mechanism: led B0: on = unlocked, off = locked; button B7: press = lock; 
+ *	button A7: doorbell tone played on speaker; B7 and '*' allow reset
  *	I acknowledge all content contained herein, excluding template or example
  *	code, is my own original work.
  *
@@ -350,14 +351,120 @@ int Tick_Together(int tstate) {
 	return tstate;
 }
 
+unsigned char newSeq[4];
+enum Set_States { sstart, wait_p, wait_r, set_p, set_r, done1, done_wait, waiting, final_set } sstate;
+int Tick_Set (int sstate) {
+	static unsigned char i = 0;
+	static unsigned char k = 0;
+	static unsigned char j = 0;
+	unsigned char temp;
+	temp = GetKeypadKey();
+
+	switch (sstate) {
+		case sstart:
+			sstate = wait_p;
+			break;
+		case wait_p:
+			if (lockB != 0 && temp == '*')
+				sstate = wait_r;
+			else
+				sstate = wait_p;
+			break;
+		case wait_r:
+			if (lockB == 0 && temp == '\0') {
+				sstate = set_p;
+				i = 0;
+			}
+			else
+				 sstate = wait_r;
+			break;
+		case set_p:
+			if (temp == '\0')
+				sstate = set_p;
+			else
+				sstate = set_r;
+			break;
+		case set_r:
+			if (temp == '\0' && i < 3) {
+				sstate = set_p;
+				++i;
+			}
+			else if (temp == '\0' && i == 3) {
+				sstate = done1;
+				k = 0;
+			}
+			else
+				sstate = set_r;
+			break;
+		case done1:
+			if (temp == '\0' && k < 10) {
+				sstate = done1;
+				++k;
+			}
+			else if (temp == 'D')
+				sstate = done_wait;
+			else
+				sstate = wait_p;
+			break;
+		case done_wait:
+			if (temp == 'D')
+				sstate = done_wait;
+			else {
+				sstate = final_set;
+				j = 0;
+			}
+			break;
+		case waiting:  
+			if (temp == '\0' && j < 10) {
+				sstate = waiting;
+				++j;
+			}
+			else if (temp == newSeq[0] && j < 10)
+				sstate = final_set;
+			else
+				sstate = wait_p;
+			break;
+		case final_set:
+			sstate = wait_p;
+			break;
+		default:
+			sstate = sstart;
+			break;
+	}
+
+	switch (sstate) {
+		case sstart:
+		case wait_p:
+		case wait_r:
+		case set_p:
+		case done1:
+		case done_wait:
+		case waiting:
+			break;
+		case set_r:
+			newSeq[i] = temp;
+			break;
+		case final_set:
+			for (unsigned char h = 0; h < 4; ++h) {
+				sequence[h] = newSeq[h];
+			}
+			seqNums = 4;
+			break;
+		default:
+			break;
+	}
+
+	return sstate;
+}
+
 int main(void) {
     /* Insert DDR and PORT initializations */
     DDRA = 0x00; PORTA = 0xFF;
     DDRB = 0x7F; PORTB = 0x80;
     DDRC = 0xF0; PORTC = 0x0F;
 
-    static task task1, task2, task3, task4;
-    task *tasks[] = { &task1, &task2, &task3, &task4 };
+    static task task1, task2, task3, task4, task5;
+    task *tasks[] = { &task1, &task2, &task3, &task4, &task5 };
     const unsigned short numTasks = sizeof(tasks)/sizeof(task*);
 
     const char start = -1;
@@ -381,6 +488,11 @@ int main(void) {
     task4.period = 200;
     task4.elapsedTime = task4.period;
     task4.TickFct = &Tick_Bell;
+    //Task 5
+    task5.state = start;
+    task5.period = 200;
+    task5.elapsedTime = task5.period;
+    task5.TickFct = &Tick_Set;
 
     //Set the timer and turn it on
     TimerSet(50);
